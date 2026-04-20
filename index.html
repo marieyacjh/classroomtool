@@ -1,61 +1,64 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classroom Tool - Student List Management</title>
-</head>
-<body>
-    <h1>Student List Management</h1>
-    <div id="student-list-container">
-        <h2>Students</h2>
-        <ul id="student-list"></ul>
-        <input type="text" id="student-name" placeholder="Enter student name" />
-        <button id="add-student-btn">Add Student</button>
-    </div>
+// Refactored Classroom Duel Board Code
 
-    <script>
-        const studentListContainer = document.getElementById('student-list');
-        const studentNameInput = document.getElementById('student-name');
-        const addStudentButton = document.getElementById('add-student-btn');
+const CONFIG = {
+    // Constants
+    MAX_STUDENTS: 10,
+    TIMER_INTERVAL: 1000
+};
 
-        let students = [];
+const appState = {
+    students: [],
+    duelMode: false,
+};
 
-        const renderStudentList = () => {
-            studentListContainer.innerHTML = '';
-            students.forEach((student, index) => {
-                const li = document.createElement('li');
-                li.textContent = student;
-                const removeButton = document.createElement('button');
-                removeButton.textContent = 'Remove';
-                removeButton.onclick = () => removeStudent(index);
-                li.appendChild(removeButton);
-                studentListContainer.appendChild(li);
-            });
-        };
+const elements = {
+    timerDisplay: document.getElementById('timerDisplay'),
+    studentList: document.getElementById('studentList'),
+    duelButton: document.getElementById('duelButton'),
+};
 
-        const addStudent = () => {
-            const studentName = studentNameInput.value.trim();
-            if (studentName) {
-                students.push(studentName);
-                studentNameInput.value = '';
-                renderStudentList();
-            }
-        };
+function createStudentRowElement(student) {
+    const row = document.createElement('tr');
+    row.innerHTML = `<td>${student.name}</td><td>${student.score}</td>`;
+    return row;
+}
 
-        const removeStudent = (index) => {
-            students.splice(index, 1);
-            renderStudentList();
-        };
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+}
 
-        // Event listener for adding students
-        addStudentButton.addEventListener('click', addStudent);
-        // Optional: Add an event listener for Enter key press
-        studentNameInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                addStudent();
-            }
-        });
-    </script>
-</body>
-</html>
+function startTimer() {
+    let time = 0;
+    setInterval(() => {
+        time += 1;
+        elements.timerDisplay.innerText = formatTime(time);
+    }, CONFIG.TIMER_INTERVAL);
+}
+
+function setupCanvas() {
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#FFFFFF';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function startDuelMode() {
+    appState.duelMode = true;
+    // Duel mode logic
+}
+
+function updateStudentList() {
+    elements.studentList.innerHTML = '';
+    appState.students.forEach(student => {
+        elements.studentList.appendChild(createStudentRowElement(student));
+    });
+}
+
+elements.duelButton.addEventListener('click', startDuelMode);
+
+// Initialize
+setupCanvas();
+startTimer();
+updateStudentList();
