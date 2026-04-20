@@ -5,179 +5,227 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Classroom Duel Board</title>
     <style>
+        /* --- COLOR PALETTE & VARIABLES --- */
         :root {
             --bar-top: #5B7E3C;
+            --main-board: #E8F5BD;
             --bar-bottom: #C44545;
-            --main-bg: #E8F5BD;
             --btn-accent: #A2CB8B;
-            --text-light: #ffffff;
-            --text-dark: #333333;
+            --white: #ffffff;
+            --dark: #333333;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: var(--main-bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        
+        body { 
+            background-color: var(--main-board); 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
 
-        /* Top Bar */
+        /* --- TOP BAR --- */
         #top-bar {
-            height: 70px;
+            height: 75px;
             background-color: var(--bar-top);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 20px;
-            color: var(--text-light);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            z-index: 10;
+            color: var(--white);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 100;
         }
 
-        .timer-section { display: flex; align-items: center; gap: 8px; }
-        #timer-display { font-family: monospace; font-size: 2.2rem; font-weight: bold; min-width: 110px; text-align: center; color: var(--main-bg); }
+        .timer-group { display: flex; align-items: center; gap: 8px; }
+        #timer-display { 
+            font-family: 'Courier New', Courier, monospace; 
+            font-size: 2.2rem; 
+            font-weight: bold; 
+            background: rgba(0,0,0,0.2);
+            padding: 5px 15px;
+            border-radius: 8px;
+            min-width: 120px;
+            text-align: center;
+            margin: 0 10px;
+        }
 
-        .btn { border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; color: var(--text-dark); background-color: var(--btn-accent); }
-        .btn:active { transform: translateY(2px); filter: brightness(0.9); }
-        .btn-mode { min-width: 130px; background-color: white; color: var(--bar-top); border: 2px solid var(--btn-accent); }
+        .btn { 
+            border: none; 
+            padding: 8px 12px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: 0.2s; 
+            background-color: var(--btn-accent);
+            color: var(--dark);
+        }
+        .btn:hover { filter: brightness(1.1); }
+        .btn:active { transform: translateY(2px); }
 
-        /* Workspace */
-        #workspace { display: flex; flex: 1; position: relative; overflow: hidden; }
+        .btn-toggle { background-color: var(--white); color: var(--bar-top); min-width: 130px; }
 
-        /* Sidebar */
+        /* --- MAIN WORKSPACE --- */
+        #workspace { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+        /* --- SIDEBAR --- */
         #sidebar {
             width: 320px;
-            background: #ffffff;
+            background: #fdfdfd;
+            border-right: 2px solid rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
-            border-right: 2px solid #ccc;
-            transition: 0.4s ease-in-out;
+            transition: transform 0.4s ease;
+            z-index: 50;
         }
         #sidebar.hidden { margin-left: -320px; }
 
-        #tabs-row { display: grid; grid-template-columns: repeat(7, 1fr); background: #ddd; gap: 1px; }
-        .tab { padding: 6px 2px; text-align: center; font-size: 10px; cursor: pointer; background: #eee; }
-        .tab.active { background: white; font-weight: bold; color: var(--bar-top); border-bottom: 2px solid var(--bar-top); }
-
-        #student-list { flex: 1; overflow-y: auto; padding: 10px; background: #fdfdfd; }
-        .student-item {
-            display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
-            padding: 5px; border-radius: 4px; background: white; border: 1px solid #eee;
+        .tabs-container {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background: #eee;
+            gap: 1px;
+            border-bottom: 2px solid var(--bar-top);
         }
-        .student-item.picked { opacity: 0.4; filter: grayscale(1); }
-        .student-item.highlight { background: yellow; transform: scale(1.02); }
-        .stu-check { width: 18px; height: 18px; }
-        .stu-name { flex: 1; border: 1px solid #ddd; padding: 3px 6px; border-radius: 3px; font-size: 13px; }
-        .stu-score { width: 45px; text-align: center; font-weight: bold; border: 1px solid #ddd; border-radius: 3px; }
+        .tab {
+            padding: 8px 2px;
+            font-size: 10px;
+            text-align: center;
+            cursor: pointer;
+            background: #ddd;
+            font-weight: bold;
+        }
+        .tab.active { background: var(--white); color: var(--bar-top); }
 
-        /* Canvas Area */
-        #canvas-wrap { flex: 1; position: relative; background-color: var(--main-bg); }
+        #student-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .student-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            padding: 5px;
+            background: var(--white);
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+        .student-row.picked { opacity: 0.4; filter: grayscale(1); }
+        .student-row.shuffling { background-color: var(--btn-accent); transform: scale(1.02); }
+
+        .stu-input { flex: 1; border: 1px solid #ddd; padding: 4px; border-radius: 3px; font-size: 14px; }
+        .stu-score { width: 45px; text-align: center; border: 1px solid #ddd; font-weight: bold; }
+        .stu-check { width: 18px; height: 18px; cursor: pointer; }
+
+        /* --- CANVAS --- */
+        #canvas-area { flex: 1; position: relative; background-color: var(--main-board); }
         canvas { display: block; touch-action: none; cursor: crosshair; }
 
-        .duel-line {
+        .duel-divider {
             position: absolute; left: 50%; top: 0; bottom: 0; width: 4px;
-            background: var(--bar-top); transform: translateX(-50%); display: none; z-index: 5;
+            background: var(--bar-top); transform: translateX(-50%);
+            display: none; z-index: 10;
         }
-        .large-score {
-            position: absolute; top: 15%; font-size: 180px; font-weight: bold;
-            color: rgba(91, 126, 60, 0.1); pointer-events: none; display: none;
+        .score-overlay {
+            position: absolute; top: 100px; font-size: 180px; font-weight: bold;
+            color: rgba(91, 126, 60, 0.15); pointer-events: none; display: none;
         }
-        #score-l { left: 15%; }
-        #score-r { right: 15%; }
+        #score-left { left: 15%; }
+        #score-right { right: 15%; }
 
-        /* Bottom Bar */
+        /* --- BOTTOM BAR --- */
         #bottom-bar {
-            height: 75px;
+            height: 80px;
             background-color: var(--bar-bottom);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 20px;
-            padding: 0 20px;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
+            z-index: 100;
         }
-        .tool-group { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.2); padding: 8px 15px; border-radius: 40px; }
-        input[type="color"] { border: none; width: 35px; height: 35px; cursor: pointer; background: transparent; }
-        #size-slider { width: 100px; cursor: pointer; }
-
-        #duel-controls { display: none; gap: 10px; }
+        .tool-box { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 50px; }
+        input[type="color"] { border: none; width: 35px; height: 35px; cursor: pointer; background: none; }
+        #duel-ui { display: none; gap: 10px; }
     </style>
 </head>
 <body>
 
     <div id="top-bar">
-        <div class="timer-section">
+        <div class="timer-group">
             <button class="btn" onclick="addTime(60)">+1m</button>
             <button class="btn" onclick="addTime(30)">+30s</button>
             <button class="btn" onclick="addTime(20)">+20s</button>
             <button class="btn" onclick="addTime(10)">+10s</button>
             <div id="timer-display">00:00</div>
-            <button class="btn" id="start-btn" style="background-color: white;" onclick="toggleTimer()">Start</button>
-            <button class="btn" style="background-color: #333; color: white;" onclick="resetTimer()">Reset</button>
+            <button class="btn" style="background: var(--white);" onclick="toggleTimer()" id="timer-btn">START</button>
+            <button class="btn" style="background: var(--dark); color: white;" onclick="resetTimer()">RESET</button>
         </div>
 
-        <div style="display: flex; gap: 10px;">
-            <button class="btn" style="background-color: #f1c40f;" onclick="randomPicker()">🎲 Random Picker</button>
-            <button class="btn btn-mode" id="mode-btn" onclick="toggleDuel()">Switch to Duel</button>
+        <div style="display:flex; gap:10px;">
+            <button class="btn" style="background: #FFD700;" onclick="startRandomPicker()">🎲 PICK STUDENT</button>
+            <button class="btn btn-toggle" onclick="toggleDuelMode()" id="mode-btn">SWITCH MODE</button>
         </div>
     </div>
 
     <div id="workspace">
         <aside id="sidebar">
-            <div id="tabs-row"></div>
+            <div class="tabs-container" id="tabs"></div>
             <div id="student-list"></div>
-            <div style="padding: 10px; border-top: 1px solid #ddd; display: flex; gap: 5px;">
-                <button class="btn" style="flex:1; font-size: 10px;" onclick="resetClass(true, false)">Reset Names</button>
-                <button class="btn" style="flex:1; font-size: 10px;" onclick="resetClass(false, true)">Reset Checks/Scores</button>
+            <div style="padding: 10px; background: #eee; display: flex; gap: 5px;">
+                <button class="btn" style="flex:1; font-size:10px;" onclick="resetClass(false)">RESET SCORES</button>
+                <button class="btn" style="flex:1; font-size:10px;" onclick="resetClass(true)">RESET ALL</button>
             </div>
         </aside>
 
-        <main id="canvas-wrap">
-            <div class="duel-line" id="divider"></div>
-            <div class="large-score" id="score-l">0</div>
-            <div class="large-score" id="score-r">0</div>
-            <canvas id="mainCanvas"></canvas>
+        <main id="canvas-area">
+            <div class="duel-divider" id="divider"></div>
+            <div class="score-overlay" id="score-left">0</div>
+            <div class="score-overlay" id="score-right">0</div>
+            <canvas id="canvas"></canvas>
         </main>
     </div>
 
     <div id="bottom-bar">
-        <div class="tool-group">
-            <button class="btn" id="tool-pen" style="background: black; color: white;" onclick="setTool('pen')">Pen</button>
-            <button class="btn" id="tool-eraser" style="background: white;" onclick="setTool('eraser')">Eraser</button>
-            <input type="color" id="color-picker" value="#000000" onchange="syncColor()">
-            <input type="range" id="size-slider" min="1" max="50" value="5">
+        <div class="tool-box">
+            <button class="btn" id="pen-btn" style="background: var(--dark); color: white;" onclick="setTool('pen')">PEN</button>
+            <button class="btn" id="eraser-btn" style="background: var(--white);" onclick="setTool('eraser')">ERASER</button>
+            <input type="color" id="color-picker" value="#333333" onchange="setTool('pen')">
+            <input type="range" id="size-slider" min="2" max="50" value="8">
         </div>
 
-        <div id="duel-controls">
-            <button class="btn" onclick="updateDuelScore('l', 1)">Left +1</button>
+        <div id="duel-ui">
+            <button class="btn" onclick="updateDuelScore('l', 1)">L +1</button>
             <button class="btn" onclick="updateDuelScore('l', -1)">-1</button>
-            <div style="width: 20px;"></div>
-            <button class="btn" onclick="updateDuelScore('r', 1)">Right +1</button>
+            <div style="width:20px"></div>
+            <button class="btn" onclick="updateDuelScore('r', 1)">R +1</button>
             <button class="btn" onclick="updateDuelScore('r', -1)">-1</button>
         </div>
 
-        <button class="btn" style="background: white; color: var(--bar-bottom);" onclick="clearBoard()">Clear Board</button>
+        <button class="btn" style="background: var(--white); color: var(--bar-bottom);" onclick="clearCanvas()">CLEAR BOARD</button>
     </div>
 
     <script>
-        // --- DATA PERSISTENCE ---
+        // --- DATA STATE & PERSISTENCE ---
         let currentTab = 0;
-        let classData = JSON.parse(localStorage.getItem('duel_board_data')) || Array.from({length: 13}, (_, i) => ({
-            id: i,
+        let classData = JSON.parse(localStorage.getItem('duelBoardData')) || Array.from({length: 13}, (_, i) => ({
             students: Array.from({length: 30}, (_, s) => ({ name: `Student ${s+1}`, score: 0, picked: false }))
         }));
 
-        function save() { localStorage.setItem('duel_board_data', JSON.stringify(classData)); }
+        function save() { localStorage.setItem('duelBoardData', JSON.stringify(classData)); }
 
-        // --- APP STATE ---
-        let isDuel = false;
+        // --- TIMER STATE ---
         let timeLeft = 0;
-        let timerRunning = false;
-        let timerId;
+        let timerInterval = null;
+
+        // --- CANVAS STATE ---
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let tool = 'pen';
+        let isDuel = false;
         let duelScores = { l: 0, r: 0 };
 
-        // --- CANVAS LOGIC ---
-        const canvas = document.getElementById('mainCanvas');
-        const ctx = canvas.getContext('2d');
-        let drawing = false;
-        let activeTool = 'pen';
-        let brushColor = '#000000';
-
+        // --- INITIALIZATION ---
         function init() {
             renderTabs();
             renderStudents();
@@ -186,162 +234,168 @@
             window.addEventListener('resize', resizeCanvas);
         }
 
-        // --- UI RENDERING ---
         function renderTabs() {
-            const container = document.getElementById('tabs-row');
+            const container = document.getElementById('tabs');
             container.innerHTML = '';
-            classData.forEach((_, i) => {
-                const btn = document.createElement('div');
-                btn.className = `tab ${i === currentTab ? 'active' : ''}`;
-                btn.innerText = `Class ${i+1}`;
-                btn.onclick = () => { currentTab = i; renderTabs(); renderStudents(); };
-                container.appendChild(btn);
-            });
+            for(let i=0; i<13; i++) {
+                const t = document.createElement('div');
+                t.className = `tab ${i === currentTab ? 'active' : ''}`;
+                t.innerText = `C${i+1}`;
+                t.onclick = () => { currentTab = i; renderTabs(); renderStudents(); };
+                container.appendChild(t);
+            }
         }
 
         function renderStudents() {
             const list = document.getElementById('student-list');
             list.innerHTML = '';
-            classData[currentTab].students.forEach((stu, i) => {
-                const item = document.createElement('div');
-                item.className = `student-item ${stu.picked ? 'picked' : ''}`;
-                item.id = `stu-row-${i}`;
-                item.innerHTML = `
-                    <input type="checkbox" class="stu-check" ${stu.picked ? 'checked' : ''} onchange="updateStu(${i}, 'picked', this.checked)">
-                    <input type="text" class="stu-name" value="${stu.name}" onchange="updateStu(${i}, 'name', this.value)">
-                    <input type="number" class="stu-score" value="${stu.score}" onchange="updateStu(${i}, 'score', this.value)">
+            classData[currentTab].students.forEach((s, i) => {
+                const row = document.createElement('div');
+                row.className = `student-row ${s.picked ? 'picked' : ''}`;
+                row.id = `stu-${i}`;
+                row.innerHTML = `
+                    <input type="checkbox" class="stu-check" ${s.picked ? 'checked' : ''} onchange="updateStu(${i}, 'picked', this.checked)">
+                    <input type="text" class="stu-input" value="${s.name}" onchange="updateStu(${i}, 'name', this.value)">
+                    <input type="number" class="stu-score" value="${s.score}" onchange="updateStu(${i}, 'score', this.value)">
                 `;
-                list.appendChild(item);
+                list.appendChild(row);
             });
         }
 
         function updateStu(idx, key, val) {
-            classData[currentTab].students[idx][key] = (key === 'score') ? parseInt(val) || 0 : val;
-            if(key === 'picked') renderStudents();
+            classData[currentTab].students[idx][key] = (key === 'score') ? parseInt(val) : val;
+            if (key === 'picked') renderStudents();
             save();
         }
 
-        function resetClass(names, status) {
+        function resetClass(full) {
             classData[currentTab].students.forEach((s, i) => {
-                if(names) s.name = `Student ${i+1}`;
-                if(status) { s.picked = false; s.score = 0; }
+                s.score = 0;
+                s.picked = false;
+                if(full) s.name = `Student ${i+1}`;
             });
             renderStudents();
             save();
         }
 
         // --- RANDOM PICKER ---
-        function randomPicker() {
-            const available = classData[currentTab].students.map((s,i) => i).filter(i => !classData[currentTab].students[i].picked);
-            if(available.length === 0) return alert("All students have been picked!");
+        function startRandomPicker() {
+            const students = classData[currentTab].students;
+            const available = students.map((s, i) => i).filter(i => !students[i].picked);
+            if (available.length === 0) return alert("All students have been picked!");
 
             let count = 0;
-            let shuffle = setInterval(() => {
-                document.querySelectorAll('.student-item').forEach(el => el.classList.remove('highlight'));
-                let rand = Math.floor(Math.random() * 30);
-                document.getElementById(`stu-row-${rand}`).classList.add('highlight');
+            const shuffle = setInterval(() => {
+                const randomIdx = Math.floor(Math.random() * 30);
+                document.querySelectorAll('.student-row').forEach(r => r.classList.remove('shuffling'));
+                document.getElementById(`stu-${randomIdx}`).classList.add('shuffling');
                 count++;
-                if(count > 15) {
+                if (count > 20) {
                     clearInterval(shuffle);
-                    document.querySelectorAll('.student-item').forEach(el => el.classList.remove('highlight'));
-                    let winnerIdx = available[Math.floor(Math.random() * available.length)];
-                    document.getElementById(`stu-row-${winnerIdx}`).classList.add('highlight');
-                    updateStu(winnerIdx, 'picked', true);
+                    document.querySelectorAll('.student-row').forEach(r => r.classList.remove('shuffling'));
+                    const winner = available[Math.floor(Math.random() * available.length)];
+                    updateStu(winner, 'picked', true);
+                    document.getElementById(`stu-${winner}`).scrollIntoView({behavior:'smooth', block:'center'});
                 }
-            }, 100);
+            }, 80);
         }
 
-        // --- TIMER ---
-        function addTime(s) { timeLeft += s; updateTimerUI(); }
-        function updateTimerUI() {
+        // --- TIMER FUNCTIONS ---
+        function addTime(s) { timeLeft += s; updateTimerDisplay(); }
+        function updateTimerDisplay() {
             const m = Math.floor(timeLeft / 60);
             const s = timeLeft % 60;
             document.getElementById('timer-display').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
         }
         function toggleTimer() {
-            if(timerRunning) {
-                clearInterval(timerId);
-                document.getElementById('start-btn').innerText = "Start";
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                document.getElementById('timer-btn').innerText = "START";
             } else {
-                if(timeLeft <= 0) return;
-                document.getElementById('start-btn').innerText = "Pause";
-                timerId = setInterval(() => {
+                if (timeLeft <= 0) return;
+                document.getElementById('timer-btn').innerText = "PAUSE";
+                timerInterval = setInterval(() => {
                     timeLeft--;
-                    updateTimerUI();
-                    if(timeLeft <= 0) { clearInterval(timerId); timerRunning = false; alert("Time is up!"); }
+                    updateTimerDisplay();
+                    if (timeLeft <= 0) { clearInterval(timerInterval); timerInterval = null; alert("Time is up!"); }
                 }, 1000);
             }
-            timerRunning = !timerRunning;
         }
-        function resetTimer() { clearInterval(timerId); timeLeft = 0; timerRunning = false; updateTimerUI(); document.getElementById('start-btn').innerText = "Start"; }
+        function resetTimer() { clearInterval(timerInterval); timerInterval = null; timeLeft = 0; updateTimerDisplay(); document.getElementById('timer-btn').innerText = "START"; }
 
         // --- DUEL MODE ---
-        function toggleDuel() {
+        function toggleDuelMode() {
             isDuel = !isDuel;
             document.getElementById('sidebar').classList.toggle('hidden', isDuel);
             document.getElementById('divider').style.display = isDuel ? 'block' : 'none';
-            document.getElementById('duel-controls').style.display = isDuel ? 'flex' : 'none';
-            document.getElementById('score-l').style.display = isDuel ? 'block' : 'none';
-            document.getElementById('score-r').style.display = isDuel ? 'block' : 'none';
-            document.getElementById('mode-btn').innerText = isDuel ? "Normal Mode" : "Switch to Duel";
-            if(isDuel) { duelScores = { l:0, r:0 }; updateDuelUI(); }
-            setTimeout(resizeCanvas, 450);
+            document.getElementById('duel-ui').style.display = isDuel ? 'flex' : 'none';
+            document.getElementById('score-left').style.display = isDuel ? 'block' : 'none';
+            document.getElementById('score-right').style.display = isDuel ? 'block' : 'none';
+            document.getElementById('mode-btn').innerText = isDuel ? "EXIT DUEL" : "SWITCH MODE";
+            
+            if(isDuel) { duelScores = { l:0, r:0 }; updateDuelScoreDisplay(); }
+            setTimeout(resizeCanvas, 400); // Wait for sidebar transition
         }
 
         function updateDuelScore(side, val) {
             duelScores[side] = Math.max(0, duelScores[side] + val);
-            updateDuelUI();
+            updateDuelScoreDisplay();
         }
-        function updateDuelUI() {
-            document.getElementById('score-l').innerText = duelScores.l;
-            document.getElementById('score-r').innerText = duelScores.r;
+        function updateDuelScoreDisplay() {
+            document.getElementById('score-left').innerText = duelScores.l;
+            document.getElementById('score-right').innerText = duelScores.r;
         }
 
-        // --- CANVAS ENGINE ---
+        // --- CANVAS DRAWING ---
         function resizeCanvas() {
-            const parent = document.getElementById('canvas-wrap');
-            // Save content
-            const temp = ctx.getImageData(0,0, canvas.width, canvas.height);
-            canvas.width = parent.clientWidth;
-            canvas.height = parent.clientHeight;
-            ctx.putImageData(temp, 0, 0);
+            const area = document.getElementById('canvas-area');
+            const data = ctx.getImageData(0,0, canvas.width, canvas.height);
+            canvas.width = area.clientWidth;
+            canvas.height = area.clientHeight;
+            ctx.putImageData(data, 0, 0);
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
         }
 
         function setupDrawing() {
-            const getCoord = (e) => {
-                const rect = canvas.getBoundingClientRect();
-                const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-                const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-                return { x, y };
+            const start = (e) => {
+                isDrawing = true;
+                const pos = getCoords(e);
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
             };
-            const start = (e) => { drawing = true; ctx.beginPath(); const p = getCoord(e); ctx.moveTo(p.x, p.y); };
-            const move = (e) => {
-                if(!drawing) return;
-                const p = getCoord(e);
-                ctx.lineTo(p.x, p.y);
-                ctx.strokeStyle = activeTool === 'pen' ? brushColor : '#E8F5BD';
+            const draw = (e) => {
+                if (!isDrawing) return;
+                const pos = getCoords(e);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.strokeStyle = (tool === 'eraser') ? '#E8F5BD' : document.getElementById('color-picker').value;
                 ctx.lineWidth = document.getElementById('size-slider').value;
                 ctx.stroke();
             };
-            const end = () => { drawing = false; };
+            const stop = () => isDrawing = false;
 
             canvas.addEventListener('mousedown', start);
-            canvas.addEventListener('mousemove', move);
-            window.addEventListener('mouseup', end);
-            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); start(e); }, {passive: false});
-            canvas.addEventListener('touchmove', (e) => { e.preventDefault(); move(e); }, {passive: false});
-            canvas.addEventListener('touchend', end);
+            canvas.addEventListener('mousemove', draw);
+            window.addEventListener('mouseup', stop);
+            
+            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); start(e.touches[0]); });
+            canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); });
+            canvas.addEventListener('touchend', stop);
+        }
+
+        function getCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            return { x: e.clientX - rect.left, y: e.clientY - rect.top };
         }
 
         function setTool(t) {
-            activeTool = t;
-            document.getElementById('tool-pen').style.boxShadow = t === 'pen' ? '0 0 10px white' : 'none';
-            document.getElementById('tool-eraser').style.boxShadow = t === 'eraser' ? '0 0 10px white' : 'none';
+            tool = t;
+            document.getElementById('pen-btn').style.boxShadow = (t==='pen') ? '0 0 10px white' : 'none';
+            document.getElementById('eraser-btn').style.boxShadow = (t==='eraser') ? '0 0 10px #333' : 'none';
         }
-        function syncColor() { brushColor = document.getElementById('color-picker').value; setTool('pen'); }
-        function clearBoard() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
         init();
     </script>
