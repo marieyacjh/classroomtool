@@ -6,412 +6,403 @@
     <title>Classroom Duel Board</title>
     <style>
         :root {
-            --top-bar: #5B7E3C;
-            --bottom-bar: #C44545;
-            --board-bg: #E8F5BD;
-            --btn-green: #A2CB8B;
-            --text-white: #ffffff;
+            --primary: #4a90e2;
+            --secondary: #f39c12;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --danger: #e74c3c;
+            --success: #27ae60;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
-        
-        body { 
-            background-color: var(--board-bg); 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-            overflow: hidden; 
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--dark); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* Top Bar */
+        #top-bar {
+            height: 60px;
+            background: #1a252f;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            color: white;
+            border-bottom: 2px solid #34495e;
         }
 
-        /* --- Top Navigation & Timer --- */
-        #top-nav { 
-            background: var(--top-bar); 
-            color: var(--text-white); 
-            padding: 0 20px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            height: 70px;
-            flex-shrink: 0;
-            z-index: 100;
-        }
-        .timer-wrap { display: flex; align-items: center; gap: 8px; }
-        #timer-display { 
-            font-size: 2rem; 
-            font-weight: bold; 
-            font-family: monospace; 
-            background: #222; 
-            padding: 2px 12px; 
-            border-radius: 5px; 
-            color: #00FF00;
-            margin-right: 10px;
-        }
-        .timer-btn { background: var(--btn-green); border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; color: #333; }
-        .mode-toggle { background: white; color: var(--top-bar); border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: 900; }
+        .timer-display { font-size: 24px; font-weight: bold; font-family: monospace; color: var(--secondary); margin: 0 15px; }
+        .btn { border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-blue { background: var(--primary); color: white; }
+        .btn-orange { background: var(--secondary); color: white; }
+        .btn-toggle { background: #555; color: white; width: 120px; }
+        .btn-toggle.active { background: var(--success); }
 
-        /* --- Main Workspace Layout --- */
-        #main-wrapper { 
-            display: flex; 
-            flex: 1; 
-            overflow: hidden; 
-            position: relative;
+        /* Main Workspace */
+        #main-container { display: flex; flex: 1; position: relative; overflow: hidden; }
+
+        /* Sidebar - Student List */
+        #sidebar {
+            width: 300px;
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid #ddd;
+            transition: 0.3s;
         }
 
-        /* --- SIDEBAR: Student List & Tabs --- */
-        #sidebar { 
-            width: 350px; 
-            background: #f8f9fa; 
-            border-right: 3px solid var(--top-bar); 
-            display: flex; 
-            flex-direction: column; 
-            flex-shrink: 0; 
-            transition: margin-left 0.3s ease;
-            z-index: 50;
+        #sidebar.hidden { margin-left: -300px; }
+
+        .tabs { display: flex; background: #eee; }
+        .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-bottom: 2px solid transparent; font-size: 12px; }
+        .tab.active { background: white; border-bottom: 3px solid var(--primary); font-weight: bold; }
+
+        .student-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .student-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 5px;
+            padding: 5px;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        #sidebar.collapsed { margin-left: -350px; }
+        .student-item.picked { opacity: 0.5; background: #dff0d8; }
+        .student-item.highlight { background: yellow; transform: scale(1.05); transition: 0.1s; }
+        .student-name { flex: 1; border: none; font-size: 14px; padding: 3px; }
+        .score-box { width: 40px; text-align: center; font-weight: bold; color: var(--primary); border: 1px solid #ddd; }
+
+        /* Canvas Area */
+        #canvas-wrapper { flex: 1; position: relative; background: white; cursor: crosshair; }
+        canvas { display: block; width: 100%; height: 100%; }
         
-        /* 14 Tabs Grid */
-        .tabs-container { 
-            display: grid; 
-            grid-template-columns: repeat(7, 1fr); 
-            gap: 2px; 
-            background: #ccc; 
-            padding: 2px;
-        }
-        .tab { 
-            padding: 8px 0; 
-            border: none; 
-            cursor: pointer; 
-            font-size: 0.7rem; 
-            background: #eee; 
-            font-weight: bold; 
-            text-align: center;
-        }
-        .tab.active { background: var(--top-bar); color: white; }
-        
-        /* The List of 30 Students */
-        #student-list { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 10px; 
-            background: #fff;
-        }
-        .student-row { 
-            display: flex; 
-            align-items: center; 
-            gap: 5px; 
-            margin-bottom: 6px; 
-            padding: 5px; 
-            background: #fefefe; 
-            border: 1px solid #ddd; 
-            border-radius: 5px; 
-        }
-        .student-row.highlight { background: #fff176 !important; border-color: #ffd600; box-shadow: 0 0 10px #ffd600; }
-        .student-row.checked { opacity: 0.4; }
-        
-        .student-name-input { 
-            flex: 1; 
-            border: 1px solid #ccc; 
-            padding: 4px; 
-            border-radius: 3px; 
-            font-size: 0.9rem; 
-        }
-        .score-val { width: 30px; text-align: center; font-weight: bold; font-size: 1rem; }
-        .score-btn { 
-            width: 25px; 
-            height: 25px; 
-            cursor: pointer; 
-            background: var(--btn-green); 
-            border: none; 
-            border-radius: 4px; 
-            font-weight: bold; 
+        .duel-divider {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #333;
+            transform: translateX(-50%);
+            display: none;
+            z-index: 5;
         }
 
-        /* --- CANVAS AREA --- */
-        #canvas-container { 
-            flex: 1; 
-            position: relative; 
-            background: var(--board-bg); 
-            overflow: hidden;
-        }
-        canvas { display: block; touch-action: none; cursor: crosshair; }
-        
-        /* Duel Elements */
-        #duel-line { 
-            position: absolute; 
-            left: 50%; 
-            top: 0; 
-            bottom: 0; 
-            width: 4px; 
-            border-left: 4px dashed var(--top-bar); 
-            display: none; 
+        /* Large Score Overlays for Duel */
+        .duel-score {
+            position: absolute;
+            top: 20px;
+            font-size: 80px;
+            font-weight: bold;
+            color: rgba(0,0,0,0.2);
             pointer-events: none;
-        }
-        .duel-score { 
-            position: absolute; 
-            top: 50%; 
-            transform: translateY(-50%);
-            font-size: 12rem; 
-            color: rgba(0,0,0,0.05); 
-            font-weight: 900; 
-            pointer-events: none; 
             display: none;
         }
-        #score-l { left: 10%; }
-        #score-r { right: 10%; }
+        #score-left { left: 20%; }
+        #score-right { right: 20%; }
 
-        /* --- Bottom Tools --- */
-        #bottom-bar { 
-            background: var(--bottom-bar); 
-            color: white; 
-            padding: 10px; 
-            display: flex; 
-            justify-content: center; 
-            gap: 20px; 
-            align-items: center; 
-            flex-shrink: 0;
+        /* Bottom Controls */
+        #bottom-bar {
+            height: 70px;
+            background: #f1f1f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            border-top: 2px solid #ddd;
         }
-        .tool-group { display: flex; align-items: center; gap: 10px; }
-        .tool-btn { padding: 8px 15px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; background: white; color: #333; }
-        input[type="color"] { width: 40px; height: 40px; border: 2px solid white; border-radius: 5px; cursor: pointer; background: none; }
+
+        .tool-group { display: flex; align-items: center; gap: 10px; background: white; padding: 5px 15px; border-radius: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input[type="color"] { border: none; width: 30px; height: 30px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="top-nav">
-        <div class="timer-wrap">
-            <div id="timer-display">00:00</div>
-            <button class="timer-btn" onclick="addTime(60)">+1m</button>
-            <button class="timer-btn" onclick="addTime(30)">+30s</button>
-            <button class="timer-btn" onclick="addTime(20)">+20s</button>
-            <button class="timer-btn" onclick="addTime(10)">+10s</button>
-            <button class="timer-btn" style="background:#ff7675" onclick="resetTimer()">Reset</button>
+    <div id="top-bar">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button class="btn btn-blue" onclick="adjustTimer(60)">+1m</button>
+              <button class="btn btn-blue" onclick="adjustTimer(10)">+30s</button>
+              <button class="btn btn-blue" onclick="adjustTimer(10)">+20s</button>
+            <button class="btn btn-blue" onclick="adjustTimer(10)">+10s</button>
+            <div class="timer-display" id="timer">00:00</div>
+            <button class="btn btn-orange" onclick="toggleTimer()" id="timer-btn">Start</button>
+            <button class="btn" style="background:#7f8c8d; color:white;" onclick="resetTimer()">Reset</button>
         </div>
-        <button class="mode-toggle" id="modeSwitcher" onclick="toggleDuelMode()">SWITCH TO DUEL</button>
+
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-orange" onclick="pickRandomStudent()">🎲 Pick Student</button>
+            <button class="btn btn-toggle" id="mode-toggle" onclick="toggleMode()">Normal Mode</button>
+        </div>
     </div>
 
-    <div id="main-wrapper">
-        <aside id="sidebar">
-            <div class="tabs-container" id="tabs"></div>
-            <div id="student-list"></div>
-            <div style="padding: 10px; display: flex; gap: 5px; background: #eee;">
-                <button class="tool-btn" style="flex:2; background:var(--top-bar); color:white" onclick="pickRandom()">🎲 RANDOM PICK</button>
-                <button class="tool-btn" style="flex:1" onclick="clearChecks()">RESET</button>
-            </div>
-        </aside>
+    <div id="main-container">
+        <div id="sidebar">
+            <div class="tabs" id="tabs-bar">
+                </div>
+            <div class="student-list" id="student-list">
+                </div>
+            <button class="btn btn-blue" style="margin: 10px; border-radius: 0;" onclick="resetClassStatus()">Reset Checked/Scores</button>
+        </div>
 
-        <main id="canvas-container">
-            <div id="duel-line"></div>
-            <div class="duel-score" id="score-l">0</div>
-            <div class="duel-score" id="score-r">0</div>
-            <canvas id="board"></canvas>
-        </main>
+        <div id="canvas-wrapper" id="draw-area">
+            <div class="duel-divider" id="divider"></div>
+            <div class="duel-score" id="score-left">0</div>
+            <div class="duel-score" id="score-right">0</div>
+            <canvas id="mainCanvas"></canvas>
+        </div>
     </div>
 
-    <footer id="bottom-bar">
+    <div id="bottom-bar">
         <div class="tool-group">
-            <button class="tool-btn" onclick="setTool('pen')">✏️ Pen</button>
-            <button class="tool-btn" onclick="setTool('eraser')">🧽 Eraser</button>
-            <input type="color" id="brushColor" value="#000000">
-            <select id="brushSize" class="tool-btn">
-                <option value="3">Thin</option>
-                <option value="10" selected>Medium</option>
-                <option value="20">Thick</option>
-            </select>
+            <button class="btn" id="pen-btn" style="background:var(--primary); color:white" onclick="setTool('pen')">Pen</button>
+            <button class="btn" id="eraser-btn" style="background:#ccc;" onclick="setTool('eraser')">Eraser</button>
+            <input type="color" id="colorPicker" value="#000000" onchange="updateColor()">
+            <input type="range" id="sizePicker" min="2" max="20" value="5">
         </div>
-        <button class="tool-btn" onclick="clearBoard()">🗑️ CLEAR BOARD</button>
-    </footer>
+        
+        <div class="tool-group" id="duel-controls" style="display:none;">
+            <button class="btn btn-blue" onclick="changeDuelScore('left', 1)">L +1</button>
+            <button class="btn btn-blue" onclick="changeDuelScore('left', -1)">L -1</button>
+            <div style="width:20px"></div>
+            <button class="btn btn-orange" onclick="changeDuelScore('right', 1)">R +1</button>
+            <button class="btn btn-orange" onclick="changeDuelScore('right', -1)">R -1</button>
+        </div>
+
+        <button class="btn btn-danger" onclick="clearCanvas()">Clear Board</button>
+    </div>
 
     <script>
-        // --- State ---
-        let currentClass = 0;
-        let isDuel = false;
-        let tool = 'pen';
+        // --- State Management ---
+        let currentTab = 0;
+        let studentsData = JSON.parse(localStorage.getItem('duelBoardData')) || Array.from({length: 6}, () => Array.from({length: 20}, (_, i) => ({name: `Student ${i+1}`, score: 0, picked: false})));
+        let isDuelMode = false;
+        let duelScores = { left: 0, right: 0 };
+        
+        // Timer vars
         let timeLeft = 0;
-        let timerId = null;
+        let timerInterval = null;
 
-        // Load 14 classes x 30 students
-        let data = JSON.parse(localStorage.getItem('duelBoardData')) || Array.from({length: 14}, () => 
-            Array.from({length: 30}, (_, i) => ({ name: `Student ${i+1}`, score: 0, checked: false }))
-        );
-
-        const canvas = document.getElementById('board');
+        // Canvas vars
+        const canvas = document.getElementById('mainCanvas');
         const ctx = canvas.getContext('2d');
-        let isDrawing = false;
+        let drawing = false;
+        let tool = 'pen';
+        let color = '#000000';
 
+        // --- Initialization ---
         window.onload = () => {
-            renderTabs();
+            initTabs();
             renderStudents();
-            initCanvas();
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Canvas Mouse/Touch Events
+            canvas.addEventListener('mousedown', startDraw);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDraw);
+            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e.touches[0]); });
+            canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); });
+            canvas.addEventListener('touchend', stopDraw);
         };
 
-        function save() { localStorage.setItem('duelBoardData', JSON.stringify(data)); }
+        function saveData() {
+            localStorage.setItem('duelBoardData', JSON.stringify(studentsData));
+        }
 
-        // --- Sidebar Logic ---
-        function renderTabs() {
-            const container = document.getElementById('tabs');
-            container.innerHTML = '';
-            for(let i=0; i<14; i++) {
-                const btn = document.createElement('button');
-                btn.className = `tab ${i === currentClass ? 'active' : ''}`;
-                btn.innerText = `C${i+1}`;
-                btn.onclick = () => { currentClass = i; renderTabs(); renderStudents(); };
-                container.appendChild(btn);
+        // --- Student List & Tabs ---
+        function initTabs() {
+            const tabsBar = document.getElementById('tabs-bar');
+            tabsBar.innerHTML = '';
+            for(let i=0; i<6; i++) {
+                const tab = document.createElement('div');
+                tab.className = `tab ${i === currentTab ? 'active' : ''}`;
+                tab.innerText = `Class ${i+1}`;
+                tab.onclick = () => switchTab(i);
+                tabsBar.appendChild(tab);
             }
+        }
+
+        function switchTab(index) {
+            currentTab = index;
+            initTabs();
+            renderStudents();
         }
 
         function renderStudents() {
             const list = document.getElementById('student-list');
             list.innerHTML = '';
-            data[currentClass].forEach((s, idx) => {
-                const row = document.createElement('div');
-                row.className = `student-row ${s.checked ? 'checked' : ''}`;
-                row.id = `row-${idx}`;
-                row.innerHTML = `
-                    <input type="checkbox" ${s.checked ? 'checked' : ''} onchange="updateStudent(${idx}, 'checked', this.checked)">
-                    <input type="text" class="student-name-input" value="${s.name}" onchange="updateStudent(${idx}, 'name', this.value)">
-                    <button class="score-btn" onclick="addScore(${idx}, -1)">-</button>
-                    <div class="score-val">${s.score}</div>
-                    <button class="score-btn" onclick="addScore(${idx}, 1)">+</button>
+            studentsData[currentTab].forEach((s, idx) => {
+                const item = document.createElement('div');
+                item.className = `student-item ${s.picked ? 'picked' : ''}`;
+                item.id = `student-${idx}`;
+                item.innerHTML = `
+                    <input type="checkbox" ${s.picked ? 'checked' : ''} onchange="updateStudent(${idx}, 'picked', this.checked)">
+                    <input type="text" class="student-name" value="${s.name}" onchange="updateStudent(${idx}, 'name', this.value)">
+                    <input type="number" class="score-box" value="${s.score}" onchange="updateStudent(${idx}, 'score', this.value)">
                 `;
-                list.appendChild(row);
+                list.appendChild(item);
             });
-            updateBigScores();
         }
 
-        function updateStudent(idx, key, val) {
-            data[currentClass][idx][key] = val;
-            save();
-            if(key === 'checked') renderStudents();
+        function updateStudent(idx, field, value) {
+            studentsData[currentTab][idx][field] = field === 'score' ? parseInt(value) : value;
+            if(field === 'picked') renderStudents();
+            saveData();
         }
 
-        function addScore(idx, amt) {
-            data[currentClass][idx].score += amt;
-            save();
+        function resetClassStatus() {
+            studentsData[currentTab].forEach(s => { s.score = 0; s.picked = false; });
+            saveData();
             renderStudents();
         }
 
-        function clearChecks() {
-            data[currentClass].forEach(s => s.checked = false);
-            save();
-            renderStudents();
-        }
-
-        function pickRandom() {
-            const pool = data[currentClass].map((s, i) => ({...s, i})).filter(s => !s.checked);
-            if(pool.length === 0) return alert("All students done!");
-
-            let count = 0;
-            const timer = setInterval(() => {
-                const rand = Math.floor(Math.random() * 30);
-                document.querySelectorAll('.student-row').forEach(r => r.classList.remove('highlight'));
-                document.getElementById(`row-${rand}`).classList.add('highlight');
-                if(++count > 15) {
-                    clearInterval(timer);
-                    const winner = pool[Math.floor(Math.random() * pool.length)];
-                    document.querySelectorAll('.student-row').forEach(r => r.classList.remove('highlight'));
-                    document.getElementById(`row-${winner.i}`).classList.add('highlight');
-                    updateStudent(winner.i, 'checked', true);
-                }
-            }, 100);
-        }
-
-        // --- Timer Logic ---
-        function addTime(s) {
-            timeLeft += s;
-            updateTimerDisplay();
-            if(!timerId) {
-                timerId = setInterval(() => {
-                    if(timeLeft > 0) { timeLeft--; updateTimerDisplay(); }
-                    else { clearInterval(timerId); timerId = null; }
-                }, 1000);
+        // --- Random Picker ---
+        function pickRandomStudent() {
+            const available = studentsData[currentTab].filter(s => !s.picked);
+            if (available.length === 0) {
+                alert("All students have been picked! Resetting list...");
+                studentsData[currentTab].forEach(s => s.picked = false);
+                renderStudents();
+                return;
             }
+
+            let shuffleCount = 0;
+            const maxShuffle = 15;
+            const interval = setInterval(() => {
+                document.querySelectorAll('.student-item').forEach(el => el.classList.remove('highlight'));
+                const randIdx = Math.floor(Math.random() * 20);
+                document.getElementById(`student-${randIdx}`).classList.add('highlight');
+                shuffleCount++;
+
+                if (shuffleCount >= maxShuffle) {
+                    clearInterval(interval);
+                    document.querySelectorAll('.student-item').forEach(el => el.classList.remove('highlight'));
+                    
+                    // Logic to pick a non-picked one
+                    const target = available[Math.floor(Math.random() * available.length)];
+                    const actualIdx = studentsData[currentTab].indexOf(target);
+                    target.picked = true;
+                    document.getElementById(`student-${actualIdx}`).classList.add('highlight');
+                    saveData();
+                    setTimeout(renderStudents, 800);
+                }
+            }, 80);
         }
 
-        function resetTimer() {
-            clearInterval(timerId); timerId = null;
-            timeLeft = 0;
+        // --- Canvas Logic ---
+        function resizeCanvas() {
+            const container = document.getElementById('canvas-wrapper');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+
+        function setTool(t) {
+            tool = t;
+            document.getElementById('pen-btn').style.background = t === 'pen' ? 'var(--primary)' : '#ccc';
+            document.getElementById('eraser-btn').style.background = t === 'eraser' ? 'var(--primary)' : '#ccc';
+        }
+
+        function updateColor() { color = document.getElementById('colorPicker').value; setTool('pen'); }
+
+        function startDraw(e) {
+            drawing = true;
+            ctx.beginPath();
+            const rect = canvas.getBoundingClientRect();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        }
+
+        function draw(e) {
+            if (!drawing) return;
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.strokeStyle = tool === 'eraser' ? 'white' : color;
+            ctx.lineWidth = document.getElementById('sizePicker').value;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        }
+
+        function stopDraw() { drawing = false; }
+
+        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+        // --- Duel Mode ---
+        function toggleMode() {
+            isDuelMode = !isDuelMode;
+            const sidebar = document.getElementById('sidebar');
+            const divider = document.getElementById('divider');
+            const toggleBtn = document.getElementById('mode-toggle');
+            const duelControls = document.getElementById('duel-controls');
+            const scores = [document.getElementById('score-left'), document.getElementById('score-right')];
+
+            if (isDuelMode) {
+                sidebar.classList.add('hidden');
+                divider.style.display = 'block';
+                toggleBtn.innerText = "Duel Mode";
+                toggleBtn.classList.add('active');
+                duelControls.style.display = 'flex';
+                scores.forEach(s => s.style.display = 'block');
+                resetDuelScores();
+            } else {
+                sidebar.classList.remove('hidden');
+                divider.style.display = 'none';
+                toggleBtn.innerText = "Normal Mode";
+                toggleBtn.classList.remove('active');
+                duelControls.style.display = 'none';
+                scores.forEach(s => s.style.display = 'none');
+            }
+            setTimeout(resizeCanvas, 310);
+        }
+
+        function changeDuelScore(side, val) {
+            duelScores[side] += val;
+            if (duelScores[side] < 0) duelScores[side] = 0;
+            document.getElementById(`score-${side}`).innerText = duelScores[side];
+        }
+
+        function resetDuelScores() {
+            duelScores = { left: 0, right: 0 };
+            document.getElementById('score-left').innerText = '0';
+            document.getElementById('score-right').innerText = '0';
+        }
+
+        // --- Timer ---
+        function adjustTimer(sec) {
+            timeLeft += sec;
             updateTimerDisplay();
         }
 
         function updateTimerDisplay() {
             const m = Math.floor(timeLeft / 60);
             const s = timeLeft % 60;
-            document.getElementById('timer-display').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            document.getElementById('timer').innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         }
 
-        // --- Canvas Logic ---
-        function initCanvas() {
-            const container = document.getElementById('canvas-container');
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-
-            const getXY = (e) => {
-                const rect = canvas.getBoundingClientRect();
-                const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-                const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-                return {x, y};
-            };
-
-            const start = (e) => { isDrawing = true; draw(e); };
-            const stop = () => { isDrawing = false; ctx.beginPath(); };
-            const draw = (e) => {
-                if(!isDrawing) return;
-                const {x, y} = getXY(e);
-                ctx.lineWidth = document.getElementById('brushSize').value;
-                ctx.strokeStyle = tool === 'eraser' ? '#E8F5BD' : document.getElementById('brushColor').value;
-                ctx.lineTo(x, y);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(x, y);
-            };
-
-            canvas.addEventListener('mousedown', start);
-            canvas.addEventListener('mousemove', draw);
-            window.addEventListener('mouseup', stop);
-            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); start(e); });
-            canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
-            canvas.addEventListener('touchend', stop);
-        }
-
-        window.onresize = initCanvas;
-        function setTool(t) { tool = t; }
-        function clearBoard() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
-
-        // --- Duel Mode Logic ---
-        function toggleDuelMode() {
-            isDuel = !isDuel;
-            const sidebar = document.getElementById('sidebar');
-            const switcher = document.getElementById('modeSwitcher');
-            const line = document.getElementById('duel-line');
-            const sl = document.getElementById('score-l');
-            const sr = document.getElementById('score-r');
-
-            if(isDuel) {
-                sidebar.classList.add('collapsed');
-                line.style.display = 'block';
-                sl.style.display = sr.style.display = 'block';
-                switcher.innerText = "SWITCH TO CLASS";
-                switcher.style.background = "#C44545";
-                switcher.style.color = "white";
+        function toggleTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                document.getElementById('timer-btn').innerText = "Start";
             } else {
-                sidebar.classList.remove('collapsed');
-                line.style.display = 'none';
-                sl.style.display = sr.style.display = 'none';
-                switcher.innerText = "SWITCH TO DUEL";
-                switcher.style.background = "white";
-                switcher.style.color = "var(--top-bar)";
+                if (timeLeft <= 0) return;
+                document.getElementById('timer-btn').innerText = "Pause";
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    updateTimerDisplay();
+                    if (timeLeft <= 0) {
+                        clearInterval(timerInterval);
+                        timerInterval = null;
+                        document.getElementById('timer-btn').innerText = "Start";
+                        alert("Time is up!");
+                    }
+                }, 1000);
             }
-            // Allow time for sidebar transition before resizing canvas
-            setTimeout(initCanvas, 350);
         }
 
-        function updateBigScores() {
-            const sorted = [...data[currentClass]].sort((a,b) => b.score - a.score);
-            document.getElementById('score-l').innerText = sorted[0]?.score || 0;
-            document.getElementById('score-r').innerText = sorted[1]?.score || 0;
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            timeLeft = 0;
+            updateTimerDisplay();
+            document.getElementById('timer-btn').innerText = "Start";
         }
     </script>
 </body>
