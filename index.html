@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interactive Duel Board</title>
+    <title>Classroom Duel Board</title>
     <style>
         :root {
             --top-bar: #5B7E3C;
@@ -13,340 +13,56 @@
             --text-white: #ffffff;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; }
         body { background-color: var(--board-bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* Top Bar & Timer */
-        #top-bar { 
-            background: var(--top-bar); color: var(--text-white); padding: 5px 15px; 
-            display: flex; align-items: center; justify-content: space-between; height: 60px;
+        /* --- Top Navigation & Timer --- */
+        #top-nav { 
+            background: var(--top-bar); color: var(--text-white); padding: 5px 20px; 
+            display: flex; align-items: center; justify-content: space-between; height: 70px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10;
         }
-        .timer-controls { display: flex; align-items: center; gap: 10px; }
-        #timer-display { font-size: 2rem; font-weight: bold; min-width: 100px; text-align: center; background: rgba(0,0,0,0.2); border-radius: 5px; }
-        .btn-time { background: var(--btn-green); border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .mode-toggle { background: #f39c12; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        .timer-wrap { display: flex; align-items: center; gap: 12px; }
+        #timer-display { font-size: 2.2rem; font-weight: bold; font-family: monospace; background: #222; padding: 5px 15px; border-radius: 8px; border: 2px solid var(--btn-green); }
+        .timer-btn { background: var(--btn-green); border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #333; transition: 0.2s; }
+        .timer-btn:hover { filter: brightness(1.1); transform: scale(1.05); }
+        .mode-toggle { background: white; color: var(--top-bar); border: 2px solid white; padding: 10px 20px; border-radius: 30px; cursor: pointer; font-weight: 900; }
 
-        /* Main Workspace */
+        /* --- Main Workspace --- */
         #main-container { display: flex; flex: 1; position: relative; overflow: hidden; }
 
-        /* Sidebar - Student List */
+        /* --- Sidebar (Student List & Tabs) --- */
         #sidebar { 
-            width: 320px; background: #fff; border-right: 2px solid var(--top-bar); 
-            display: flex; flex-direction: column; transition: 0.3s;
+            width: 340px; background: #fdfdfd; border-right: 3px solid var(--top-bar); 
+            display: flex; flex-direction: column; transition: transform 0.3s ease;
         }
-        #sidebar.hidden { display: none; }
-        .tabs { display: grid; grid-template-columns: repeat(7, 1fr); background: #eee; gap: 1px; }
-        .tab { padding: 5px; border: none; cursor: pointer; font-size: 0.7rem; background: #ddd; }
+        #sidebar.hidden { transform: translateX(-340px); width: 0; border: none; }
+        
+        .tabs { display: grid; grid-template-columns: repeat(7, 1fr); background: #ddd; gap: 2px; padding: 2px; }
+        .tab { padding: 8px 2px; border: none; cursor: pointer; font-size: 0.75rem; background: #eee; font-weight: bold; }
         .tab.active { background: var(--top-bar); color: white; }
         
         #student-list { flex: 1; overflow-y: auto; padding: 10px; }
         .student-row { 
-            display: flex; align-items: center; gap: 5px; margin-bottom: 5px; padding: 3px; 
-            border-bottom: 1px solid #eee; border-radius: 4px;
+            display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 6px; 
+            background: #fff; border: 1px solid #ddd; border-radius: 8px; transition: 0.2s;
         }
-        .student-row.highlight { background: #f1c40f !important; transform: scale(1.02); }
-        .student-row.checked { opacity: 0.5; background: #f0f0f0; }
-        .student-name { flex: 1; border: 1px solid #ccc; padding: 2px 5px; border-radius: 3px; }
-        .score-box { width: 40px; text-align: center; font-weight: bold; }
-        .btn-score { width: 25px; height: 25px; cursor: pointer; background: var(--btn-green); border: none; border-radius: 50%; }
-
-        /* Canvas Area */
-        #canvas-wrapper { flex: 1; position: relative; background: var(--board-bg); cursor: crosshair; }
-        canvas { position: absolute; top: 0; left: 0; touch-action: none; }
+        .student-row.highlight { background: #FFEB3B !important; border-color: #FBC02D; transform: scale(1.02); }
+        .student-row.checked { opacity: 0.4; filter: grayscale(1); }
         
-        /* Dual Mode Overlays */
-        .duel-ui { 
-            position: absolute; top: 10%; width: 50%; display: none; 
-            flex-direction: column; align-items: center; pointer-events: none; 
+        .student-name { flex: 1; border: 1px solid #eee; padding: 4px; border-radius: 4px; font-size: 0.9rem; }
+        .score-val { width: 35px; text-align: center; font-weight: bold; font-size: 1.1rem; }
+        .score-btn { width: 28px; height: 28px; cursor: pointer; background: var(--btn-green); border: none; border-radius: 50%; font-weight: bold; }
+
+        /* --- Drawing Canvas --- */
+        #canvas-area { flex: 1; position: relative; overflow: hidden; }
+        canvas { display: block; touch-action: none; background: transparent; }
+        
+        /* Duel Mode UI */
+        .duel-divider { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: var(--top-bar); display: none; z-index: 5; border-style: dashed; }
+        .big-score-overlay { 
+            position: absolute; top: 20px; font-size: 10rem; color: rgba(0,0,0,0.08); 
+            font-weight: 900; pointer-events: none; display: none; user-select: none;
         }
-        .duel-ui.left { left: 0; border-right: 2px dashed var(--top-bar); height: 80%; }
-        .duel-ui.right { right: 0; height: 80%; }
-        .big-score { font-size: 8rem; color: rgba(0,0,0,0.1); font-weight: bold; pointer-events: none; }
-
-        /* Bottom Control Bar */
-        #bottom-bar { 
-            background: var(--bottom-bar); color: white; padding: 10px; 
-            display: flex; justify-content: center; gap: 20px; align-items: center;
-        }
-        .tool-group { display: flex; align-items: center; gap: 10px; }
-        input[type="color"] { border: none; width: 40px; height: 40px; cursor: pointer; }
-        select, button.control-btn { padding: 8px 15px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
-
-        /* Animation */
-        @keyframes pulse {
-            0% { background: #f1c40f; }
-            100% { background: #e67e22; }
-        }
-    </style>
-</head>
-<body>
-
-    <div id="top-bar">
-        <div class="timer-controls">
-            <div id="timer-display">00:00</div>
-            <button class="btn-time" onclick="adjustTimer(60)">+1m</button>
-            <button class="btn-time" onclick="adjustTimer(30)">+30s</button>
-            <button class="btn-time" onclick="adjustTimer(10)">+20s</button>
-            <button class="btn-time" onclick="adjustTimer(10)">+10s</button>
-            <button class="btn-time" style="background:#e74c3c; color:white;" onclick="resetTimer()">Reset</button>
-        </div>
-        <div style="font-weight:bold; font-size: 1.2rem;">DUEL BOARD</div>
-        <button class="mode-toggle" onclick="toggleDuelMode()">SWITCH MODE: CLASS</button>
-    </div>
-
-    <div id="main-container">
-        <div id="sidebar">
-            <div class="tabs" id="tab-container">
-                </div>
-            <div id="student-list">
-                </div>
-            <div style="padding: 10px; border-top: 1px solid #ccc;">
-                <button class="control-btn" style="width:100%; background: #3498db; color:white;" onclick="pickRandomStudent()">🎲 Random Picker</button>
-                <button class="control-btn" style="width:100%; margin-top:5px; background: #95a5a6; color:white;" onclick="resetChecks()">Reset Checks</button>
-            </div>
-        </div>
-
-        <div id="canvas-wrapper" id="canvas-container">
-            <canvas id="mainCanvas"></canvas>
-            
-            <div class="duel-ui left" id="ui-left">
-                <div class="big-score" id="score-l-big">0</div>
-            </div>
-            <div class="duel-ui right" id="ui-right">
-                <div class="big-score" id="score-r-big">0</div>
-            </div>
-        </div>
-    </div>
-
-    <div id="bottom-bar">
-        <div class="tool-group">
-            <button class="control-btn" onclick="setTool('pen')">✏️ Pen</button>
-            <button class="control-btn" onclick="setTool('eraser')">🧽 Eraser</button>
-            <input type="color" id="colorPicker" value="#000000">
-            <select id="thickness">
-                <option value="2">Thin</option>
-                <option value="5" selected>Medium</option>
-                <option value="15">Thick</option>
-                <option value="40">Huge</option>
-            </select>
-        </div>
-        <div class="tool-group">
-            <button class="control-btn" style="background: #eee;" onclick="clearCanvas()">🗑️ Clear Board</button>
-        </div>
-    </div>
-
-    <script>
-        /** STATE MANAGEMENT **/
-        let isDuelMode = false;
-        let currentTab = 0;
-        let studentsData = JSON.parse(localStorage.getItem('duelBoardData')) || Array.from({length: 13}, () => 
-            Array.from({length: 30}, (_, i) => ({ name: `Student ${i+1}`, score: 0, checked: false }))
-        );
-
-        const canvas = document.getElementById('mainCanvas');
-        const ctx = canvas.getContext('2d');
-        let painting = false;
-        let tool = 'pen';
-        let timerSeconds = 0;
-        let timerInterval;
-
-        /** INITIALIZATION **/
-        window.onload = () => {
-            initTabs();
-            renderStudents();
-            resizeCanvas();
-            setupCanvasListeners();
-            window.addEventListener('resize', resizeCanvas);
-        };
-
-        function saveData() {
-            localStorage.setItem('duelBoardData', JSON.stringify(studentsData));
-        }
-
-        /** SIDEBAR & STUDENTS **/
-        function initTabs() {
-            const container = document.getElementById('tab-container');
-            container.innerHTML = '';
-            for(let i=0; i<13; i++) {
-                const btn = document.createElement('button');
-                btn.className = `tab ${i === currentTab ? 'active' : ''}`;
-                btn.innerText = `C${i+1}`;
-                btn.onclick = () => { currentTab = i; initTabs(); renderStudents(); };
-                container.appendChild(btn);
-            }
-        }
-
-        function renderStudents() {
-            const list = document.getElementById('student-list');
-            list.innerHTML = '';
-            studentsData[currentTab].forEach((s, idx) => {
-                const row = document.createElement('div');
-                row.className = `student-row ${s.checked ? 'checked' : ''}`;
-                row.id = `student-${idx}`;
-                row.innerHTML = `
-                    <input type="checkbox" ${s.checked ? 'checked' : ''} onchange="updateStudent(${idx}, 'checked', this.checked)">
-                    <input type="text" class="student-name" value="${s.name}" onchange="updateStudent(${idx}, 'name', this.value)">
-                    <button class="btn-score" onclick="changeScore(${idx}, -1)">-</button>
-                    <div class="score-box">${s.score}</div>
-                    <button class="btn-score" onclick="changeScore(${idx}, 1)">+</button>
-                `;
-                list.appendChild(row);
-            });
-        }
-
-        function updateStudent(idx, key, val) {
-            studentsData[currentTab][idx][key] = val;
-            saveData();
-            if(key === 'checked') renderStudents();
-        }
-
-        function changeScore(idx, delta) {
-            studentsData[currentTab][idx].score += delta;
-            saveData();
-            renderStudents();
-            updateDuelScores();
-        }
-
-        function updateDuelScores() {
-            // Simplified: Just shows top 2 scores for duel mode if visible
-            const sorted = [...studentsData[currentTab]].sort((a,b) => b.score - a.score);
-            document.getElementById('score-l-big').innerText = sorted[0].score;
-            document.getElementById('score-r-big').innerText = sorted[1].score;
-        }
-
-        function pickRandomStudent() {
-            const available = studentsData[currentTab].filter(s => !s.checked);
-            if(available.length === 0) return alert("All students checked!");
-            
-            let count = 0;
-            const interval = setInterval(() => {
-                const randIdx = Math.floor(Math.random() * 30);
-                document.querySelectorAll('.student-row').forEach(r => r.classList.remove('highlight'));
-                document.getElementById(`student-${randIdx}`).classList.add('highlight');
-                count++;
-                if(count > 15) {
-                    clearInterval(interval);
-                    const pick = available[Math.floor(Math.random() * available.length)];
-                    const finalIdx = studentsData[currentTab].indexOf(pick);
-                    document.querySelectorAll('.student-row').forEach(r => r.classList.remove('highlight'));
-                    const finalRow = document.getElementById(`student-${finalIdx}`);
-                    finalRow.classList.add('highlight');
-                    updateStudent(finalIdx, 'checked', true);
-                }
-            }, 100);
-        }
-
-        function resetChecks() {
-            studentsData[currentTab].forEach(s => s.checked = false);
-            saveData();
-            renderStudents();
-        }
-
-        /** TIMER LOGIC **/
-        function adjustTimer(amt) {
-            timerSeconds += amt;
-            updateTimerDisplay();
-            if(!timerInterval) {
-                timerInterval = setInterval(() => {
-                    if(timerSeconds > 0) {
-                        timerSeconds--;
-                        updateTimerDisplay();
-                    } else {
-                        clearInterval(timerInterval);
-                        timerInterval = null;
-                        if(timerSeconds === 0) alert("Time is up!");
-                    }
-                }, 1000);
-            }
-        }
-
-        function resetTimer() {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            timerSeconds = 0;
-            updateTimerDisplay();
-        }
-
-        function updateTimerDisplay() {
-            const m = Math.floor(timerSeconds / 60);
-            const s = timerSeconds % 60;
-            document.getElementById('timer-display').innerText = 
-                `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-        }
-
-        /** CANVAS LOGIC **/
-        function resizeCanvas() {
-            const wrapper = document.getElementById('canvas-wrapper');
-            canvas.width = wrapper.clientWidth;
-            canvas.height = wrapper.clientHeight;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-        }
-
-        function setupCanvasListeners() {
-            const start = (e) => {
-                painting = true;
-                draw(e);
-            };
-            const end = () => {
-                painting = false;
-                ctx.beginPath();
-            };
-            const move = (e) => {
-                if(!painting) return;
-                draw(e);
-            };
-
-            canvas.addEventListener('mousedown', start);
-            canvas.addEventListener('mouseup', end);
-            canvas.addEventListener('mousemove', move);
-            
-            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); start(e.touches[0]); });
-            canvas.addEventListener('touchend', end);
-            canvas.addEventListener('touchmove', (e) => { e.preventDefault(); move(e.touches[0]); });
-        }
-
-        function draw(e) {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            ctx.lineWidth = document.getElementById('thickness').value;
-            ctx.strokeStyle = tool === 'eraser' ? '#E8F5BD' : document.getElementById('colorPicker').value;
-
-            ctx.lineTo(x, y);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-        }
-
-        function setTool(t) { tool = t; }
-        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
-
-        /** MODES **/
-        function toggleDuelMode() {
-            isDuelMode = !isDuelMode;
-            const sidebar = document.getElementById('sidebar');
-            const toggleBtn = document.querySelector('.mode-toggle');
-            const leftUI = document.getElementById('ui-left');
-            const rightUI = document.getElementById('ui-right');
-
-            if(isDuelMode) {
-                sidebar.classList.add('hidden');
-                toggleBtn.innerText = "SWITCH MODE: DUEL";
-                toggleBtn.style.background = "#e74c3c";
-                leftUI.style.display = 'flex';
-                rightUI.style.display = 'flex';
-                updateDuelScores();
-            } else {
-                sidebar.classList.remove('hidden');
-                toggleBtn.innerText = "SWITCH MODE: CLASS";
-                toggleBtn.style.background = "#f39c12";
-                leftUI.style.display = 'none';
-                rightUI.style.display = 'none';
-            }
-            setTimeout(resizeCanvas, 350); // Sync canvas size after sidebar transition
-        }
-    </script>
-</body>
-</html>
+        #score-left { left: 15%; }
+        #score
