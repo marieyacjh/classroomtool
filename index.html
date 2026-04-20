@@ -3,407 +3,379 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Classroom Duel Board</title>
+    <title>Ultimate Classroom Duel Board</title>
     <style>
         :root {
-            --primary: #4a90e2;
-            --secondary: #f39c12;
-            --dark: #2c3e50;
-            --light: #ecf0f1;
-            --danger: #e74c3c;
+            --primary: #2c3e50;
+            --accent: #3498db;
             --success: #27ae60;
+            --danger: #e74c3c;
+            --warning: #f1c40f;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: var(--dark); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        body { background-color: #95a5a6; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-        /* Top Bar */
+        /* Top Bar & Timer */
         #top-bar {
-            height: 60px;
-            background: #1a252f;
+            background: var(--dark);
+            color: white;
+            padding: 10px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 20px;
-            color: white;
-            border-bottom: 2px solid #34495e;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 100;
         }
 
-        .timer-display { font-size: 24px; font-weight: bold; font-family: monospace; color: var(--secondary); margin: 0 15px; }
-        .btn { border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-blue { background: var(--primary); color: white; }
-        .btn-orange { background: var(--secondary); color: white; }
-        .btn-toggle { background: #555; color: white; width: 120px; }
-        .btn-toggle.active { background: var(--success); }
+        .timer-display { font-size: 2.5rem; font-weight: bold; font-family: monospace; color: var(--warning); margin-right: 20px; }
+        .btn { border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 0.9rem; }
+        .btn:active { transform: scale(0.95); }
+        .btn-timer { background: #555; color: white; margin: 0 2px; }
+        .btn-start { background: var(--success); color: white; }
+        .btn-pause { background: var(--warning); color: black; }
+        .btn-mode { background: var(--accent); color: white; padding: 10px 25px; font-size: 1.1rem; }
 
-        /* Main Workspace */
-        #main-container { display: flex; flex: 1; position: relative; overflow: hidden; }
+        /* Main Container */
+        #workspace { display: flex; flex: 1; overflow: hidden; }
 
-        /* Sidebar - Student List */
+        /* Sidebar - Student Management */
         #sidebar {
-            width: 300px;
-            background: #f8f9fa;
+            width: 320px;
+            background: var(--light);
             display: flex;
             flex-direction: column;
-            border-right: 2px solid #ddd;
-            transition: 0.3s;
+            border-right: 4px solid var(--dark);
         }
 
-        #sidebar.hidden { margin-left: -300px; }
+        .tabs { display: flex; flex-wrap: wrap; background: #ddd; padding: 2px; }
+        .tab { flex: 1 1 18%; padding: 5px; font-size: 0.7rem; text-align: center; cursor: pointer; border: 1px solid #ccc; background: #eee; }
+        .tab.active { background: var(--accent); color: white; font-weight: bold; }
 
-        .tabs { display: flex; background: #eee; }
-        .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-bottom: 2px solid transparent; font-size: 12px; }
-        .tab.active { background: white; border-bottom: 3px solid var(--primary); font-weight: bold; }
-
-        .student-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .sidebar-controls { padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; background: #bdc3c7; }
+        #student-list { flex: 1; overflow-y: auto; padding: 10px; }
         .student-item {
             display: flex;
             align-items: center;
-            gap: 5px;
+            background: white;
             margin-bottom: 5px;
             padding: 5px;
-            background: white;
             border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 5px solid #ccc;
         }
-        .student-item.picked { opacity: 0.5; background: #dff0d8; }
-        .student-item.highlight { background: yellow; transform: scale(1.05); transition: 0.1s; }
-        .student-name { flex: 1; border: none; font-size: 14px; padding: 3px; }
-        .score-box { width: 40px; text-align: center; font-weight: bold; color: var(--primary); border: 1px solid #ddd; }
+        .student-item.played { opacity: 0.6; border-left-color: var(--danger); }
+        .student-item.winner { background: #d4edda; border-left-color: var(--success); transform: scale(1.02); }
+        .student-name { flex: 1; border: none; font-size: 0.9rem; outline: none; }
+        .score-box { display: flex; align-items: center; gap: 5px; }
+        .score-val { font-weight: bold; width: 30px; text-align: center; }
 
         /* Canvas Area */
-        #canvas-wrapper { flex: 1; position: relative; background: white; cursor: crosshair; }
-        canvas { display: block; width: 100%; height: 100%; }
-        
+        #canvas-container { flex: 1; position: relative; background: #fff; cursor: crosshair; touch-action: none; }
+        canvas { display: block; }
         .duel-divider {
             position: absolute;
             left: 50%;
             top: 0;
             bottom: 0;
             width: 4px;
-            background: #333;
-            transform: translateX(-50%);
+            background: var(--dark);
             display: none;
-            z-index: 5;
         }
 
-        /* Large Score Overlays for Duel */
+        /* Overlay UI */
+        .canvas-tools {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border-radius: 50px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .color-pick { width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; cursor: pointer; }
+        
         .duel-score {
             position: absolute;
             top: 20px;
-            font-size: 80px;
+            font-size: 5rem;
             font-weight: bold;
             color: rgba(0,0,0,0.2);
             pointer-events: none;
-            display: none;
+            user-select: none;
         }
-        #score-left { left: 20%; }
-        #score-right { right: 20%; }
+        #score-l { left: 15%; }
+        #score-r { right: 15%; }
 
-        /* Bottom Controls */
-        #bottom-bar {
-            height: 70px;
-            background: #f1f1f1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            border-top: 2px solid #ddd;
+        .clear-zone { position: absolute; top: 10px; padding: 10px 20px; font-size: 1.2rem; }
+        #clear-l { left: 10px; }
+        #clear-r { right: 10px; display: none; }
+
+        /* Animations */
+        @keyframes highlight {
+            0% { background: var(--warning); }
+            100% { background: white; }
         }
-
-        .tool-group { display: flex; align-items: center; gap: 10px; background: white; padding: 5px 15px; border-radius: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input[type="color"] { border: none; width: 30px; height: 30px; cursor: pointer; }
+        .picking { animation: highlight 0.1s infinite; }
     </style>
 </head>
 <body>
 
-    <div id="top-bar">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <button class="btn btn-blue" onclick="adjustTimer(60)">+1m</button>
-              <button class="btn btn-blue" onclick="adjustTimer(10)">+30s</button>
-              <button class="btn btn-blue" onclick="adjustTimer(10)">+20s</button>
-            <button class="btn btn-blue" onclick="adjustTimer(10)">+10s</button>
-            <div class="timer-display" id="timer">00:00</div>
-            <button class="btn btn-orange" onclick="toggleTimer()" id="timer-btn">Start</button>
-            <button class="btn" style="background:#7f8c8d; color:white;" onclick="resetTimer()">Reset</button>
-        </div>
+<div id="top-bar">
+    <div style="display: flex; align-items: center;">
+        <div class="timer-display" id="timer-text">00:00</div>
+        <button class="btn btn-timer" onclick="adjustTimer(10)">+10s</button>
+        <button class="btn btn-timer" onclick="adjustTimer(30)">+30s</button>
+        <button class="btn btn-timer" onclick="adjustTimer(60)">+1m</button>
+        <button class="btn btn-start" id="start-btn" onclick="toggleTimer()">START</button>
+        <button class="btn btn-timer" onclick="resetTimer()">RESET</button>
+    </div>
+    
+    <button class="btn btn-mode" onclick="toggleMode()" id="mode-btn">SINGLE MODE</button>
+    
+    <div style="display: flex; gap: 5px;">
+        <input type="color" id="pen-color" value="#000000" class="color-pick">
+        <input type="range" id="pen-width" min="2" max="20" value="5">
+        <button class="btn btn-timer" onclick="useEraser()">Eraser</button>
+    </div>
+</div>
 
-        <div style="display: flex; gap: 10px;">
-            <button class="btn btn-orange" onclick="pickRandomStudent()">🎲 Pick Student</button>
-            <button class="btn btn-toggle" id="mode-toggle" onclick="toggleMode()">Normal Mode</button>
+<div id="workspace">
+    <div id="sidebar">
+        <div class="tabs" id="class-tabs"></div>
+        <div class="sidebar-controls">
+            <button class="btn btn-start" onclick="pickRandom()">PICK RANDOM</button>
+            <button class="btn btn-timer" onclick="sortStudents()">SORT SCORE</button>
+            <button class="btn btn-pause" onclick="resetClass()">RESET CLASS</button>
+            <button class="btn btn-timer" onclick="clearPicks()">CLEAR PICKS</button>
         </div>
+        <div id="student-list"></div>
     </div>
 
-    <div id="main-container">
-        <div id="sidebar">
-            <div class="tabs" id="tabs-bar">
-                </div>
-            <div class="student-list" id="student-list">
-                </div>
-            <button class="btn btn-blue" style="margin: 10px; border-radius: 0;" onclick="resetClassStatus()">Reset Checked/Scores</button>
-        </div>
-
-        <div id="canvas-wrapper" id="draw-area">
-            <div class="duel-divider" id="divider"></div>
-            <div class="duel-score" id="score-left">0</div>
-            <div class="duel-score" id="score-right">0</div>
-            <canvas id="mainCanvas"></canvas>
-        </div>
+    <div id="canvas-container">
+        <div id="score-l" class="duel-score">0</div>
+        <div id="score-r" class="duel-score" style="display: none;">0</div>
+        <div class="duel-divider" id="divider"></div>
+        <button id="clear-l" class="btn btn-pause clear-zone" onclick="clearCanvas('left')">CLEAR</button>
+        <button id="clear-r" class="btn btn-pause clear-zone" onclick="clearCanvas('right')">CLEAR</button>
+        <canvas id="paint-canvas"></canvas>
     </div>
+</div>
 
-    <div id="bottom-bar">
-        <div class="tool-group">
-            <button class="btn" id="pen-btn" style="background:var(--primary); color:white" onclick="setTool('pen')">Pen</button>
-            <button class="btn" id="eraser-btn" style="background:#ccc;" onclick="setTool('eraser')">Eraser</button>
-            <input type="color" id="colorPicker" value="#000000" onchange="updateColor()">
-            <input type="range" id="sizePicker" min="2" max="20" value="5">
-        </div>
+<script>
+    // --- Global State ---
+    let currentClass = 0;
+    let classes = JSON.parse(localStorage.getItem('duelBoardData')) || Array.from({length: 15}, () => Array.from({length: 30}, (_, i) => ({name: `Student ${i+1}`, score: 0, played: false})));
+    let isDuel = false;
+    let timerInterval = null;
+    let timeLeft = 0;
+    let duelScores = { l: 0, r: 0 };
+
+    // --- Initialization ---
+    const canvas = document.getElementById('paint-canvas');
+    const ctx = canvas.getContext('2d');
+    const studentListEl = document.getElementById('student-list');
+    const classTabsEl = document.getElementById('class-tabs');
+
+    function init() {
+        // Create Tabs
+        for(let i=0; i<15; i++) {
+            const tab = document.createElement('div');
+            tab.className = `tab ${i === 0 ? 'active' : ''}`;
+            tab.innerText = `C${i+1}`;
+            tab.onclick = () => switchClass(i);
+            classTabsEl.appendChild(tab);
+        }
         
-        <div class="tool-group" id="duel-controls" style="display:none;">
-            <button class="btn btn-blue" onclick="changeDuelScore('left', 1)">L +1</button>
-            <button class="btn btn-blue" onclick="changeDuelScore('left', -1)">L -1</button>
-            <div style="width:20px"></div>
-            <button class="btn btn-orange" onclick="changeDuelScore('right', 1)">R +1</button>
-            <button class="btn btn-orange" onclick="changeDuelScore('right', -1)">R -1</button>
-        </div>
+        resizeCanvas();
+        renderStudents();
+        window.addEventListener('resize', resizeCanvas);
+        setupDrawing();
+    }
 
-        <button class="btn btn-danger" onclick="clearCanvas()">Clear Board</button>
-    </div>
+    // --- Persistence ---
+    function saveData() {
+        localStorage.setItem('duelBoardData', JSON.stringify(classes));
+    }
 
-    <script>
-        // --- State Management ---
-        let currentTab = 0;
-        let studentsData = JSON.parse(localStorage.getItem('duelBoardData')) || Array.from({length: 6}, () => Array.from({length: 20}, (_, i) => ({name: `Student ${i+1}`, score: 0, picked: false})));
-        let isDuelMode = false;
-        let duelScores = { left: 0, right: 0 };
-        
-        // Timer vars
-        let timeLeft = 0;
-        let timerInterval = null;
+    // --- Sidebar Logic ---
+    function renderStudents() {
+        studentListEl.innerHTML = '';
+        classes[currentClass].forEach((s, idx) => {
+            const div = document.createElement('div');
+            div.className = `student-item ${s.played ? 'played' : ''}`;
+            div.id = `student-${idx}`;
+            div.innerHTML = `
+                <input class="student-name" value="${s.name}" onchange="updateName(${idx}, this.value)">
+                <div class="score-box">
+                    <button class="btn btn-timer" style="padding:2px 6px" onclick="updateScore(${idx}, -1)">-</button>
+                    <span class="score-val">${s.score}</span>
+                    <button class="btn btn-timer" style="padding:2px 6px" onclick="updateScore(${idx}, 1)">+</button>
+                </div>
+            `;
+            studentListEl.appendChild(div);
+        });
+    }
 
-        // Canvas vars
-        const canvas = document.getElementById('mainCanvas');
-        const ctx = canvas.getContext('2d');
-        let drawing = false;
-        let tool = 'pen';
-        let color = '#000000';
+    function updateName(idx, val) { classes[currentClass][idx].name = val; saveData(); }
+    function updateScore(idx, delta) { 
+        classes[currentClass][idx].score += delta; 
+        renderStudents(); 
+        saveData(); 
+    }
 
-        // --- Initialization ---
-        window.onload = () => {
-            initTabs();
-            renderStudents();
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-            
-            // Canvas Mouse/Touch Events
-            canvas.addEventListener('mousedown', startDraw);
-            canvas.addEventListener('mousemove', draw);
-            canvas.addEventListener('mouseup', stopDraw);
-            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e.touches[0]); });
-            canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); });
-            canvas.addEventListener('touchend', stopDraw);
-        };
+    function switchClass(id) {
+        currentClass = id;
+        document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === id));
+        renderStudents();
+    }
 
-        function saveData() {
-            localStorage.setItem('duelBoardData', JSON.stringify(studentsData));
-        }
+    function sortStudents() {
+        classes[currentClass].sort((a, b) => b.score - a.score);
+        renderStudents();
+        saveData();
+    }
 
-        // --- Student List & Tabs ---
-        function initTabs() {
-            const tabsBar = document.getElementById('tabs-bar');
-            tabsBar.innerHTML = '';
-            for(let i=0; i<6; i++) {
-                const tab = document.createElement('div');
-                tab.className = `tab ${i === currentTab ? 'active' : ''}`;
-                tab.innerText = `Class ${i+1}`;
-                tab.onclick = () => switchTab(i);
-                tabsBar.appendChild(tab);
-            }
-        }
+    function pickRandom() {
+        const available = classes[currentClass].filter(s => !s.played);
+        if (available.length === 0) return alert("All students have played!");
 
-        function switchTab(index) {
-            currentTab = index;
-            initTabs();
-            renderStudents();
-        }
-
-        function renderStudents() {
-            const list = document.getElementById('student-list');
-            list.innerHTML = '';
-            studentsData[currentTab].forEach((s, idx) => {
-                const item = document.createElement('div');
-                item.className = `student-item ${s.picked ? 'picked' : ''}`;
-                item.id = `student-${idx}`;
-                item.innerHTML = `
-                    <input type="checkbox" ${s.picked ? 'checked' : ''} onchange="updateStudent(${idx}, 'picked', this.checked)">
-                    <input type="text" class="student-name" value="${s.name}" onchange="updateStudent(${idx}, 'name', this.value)">
-                    <input type="number" class="score-box" value="${s.score}" onchange="updateStudent(${idx}, 'score', this.value)">
-                `;
-                list.appendChild(item);
-            });
-        }
-
-        function updateStudent(idx, field, value) {
-            studentsData[currentTab][idx][field] = field === 'score' ? parseInt(value) : value;
-            if(field === 'picked') renderStudents();
-            saveData();
-        }
-
-        function resetClassStatus() {
-            studentsData[currentTab].forEach(s => { s.score = 0; s.picked = false; });
-            saveData();
-            renderStudents();
-        }
-
-        // --- Random Picker ---
-        function pickRandomStudent() {
-            const available = studentsData[currentTab].filter(s => !s.picked);
-            if (available.length === 0) {
-                alert("All students have been picked! Resetting list...");
-                studentsData[currentTab].forEach(s => s.picked = false);
+        let count = 0;
+        const interval = setInterval(() => {
+            const items = document.querySelectorAll('.student-item');
+            items.forEach(i => i.classList.remove('picking'));
+            const randIdx = Math.floor(Math.random() * items.length);
+            items[randIdx].classList.add('picking');
+            count++;
+            if (count > 20) {
+                clearInterval(interval);
+                items.forEach(i => i.classList.remove('picking'));
+                const actualPick = available[Math.floor(Math.random() * available.length)];
+                actualPick.played = true;
                 renderStudents();
-                return;
+                saveData();
+                // Find and highlight winner visually
+                const winnerIdx = classes[currentClass].indexOf(actualPick);
+                document.getElementById(`student-${winnerIdx}`).classList.add('winner');
             }
+        }, 100);
+    }
 
-            let shuffleCount = 0;
-            const maxShuffle = 15;
-            const interval = setInterval(() => {
-                document.querySelectorAll('.student-item').forEach(el => el.classList.remove('highlight'));
-                const randIdx = Math.floor(Math.random() * 20);
-                document.getElementById(`student-${randIdx}`).classList.add('highlight');
-                shuffleCount++;
-
-                if (shuffleCount >= maxShuffle) {
-                    clearInterval(interval);
-                    document.querySelectorAll('.student-item').forEach(el => el.classList.remove('highlight'));
-                    
-                    // Logic to pick a non-picked one
-                    const target = available[Math.floor(Math.random() * available.length)];
-                    const actualIdx = studentsData[currentTab].indexOf(target);
-                    target.picked = true;
-                    document.getElementById(`student-${actualIdx}`).classList.add('highlight');
-                    saveData();
-                    setTimeout(renderStudents, 800);
-                }
-            }, 80);
+    function resetClass() {
+        if(confirm("Reset scores and names for this class?")) {
+            classes[currentClass] = Array.from({length: 30}, (_, i) => ({name: `Student ${i+1}`, score: 0, played: false}));
+            renderStudents();
+            saveData();
         }
+    }
 
-        // --- Canvas Logic ---
-        function resizeCanvas() {
-            const container = document.getElementById('canvas-wrapper');
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
-        }
+    function clearPicks() {
+        classes[currentClass].forEach(s => s.played = false);
+        renderStudents();
+        saveData();
+    }
 
-        function setTool(t) {
-            tool = t;
-            document.getElementById('pen-btn').style.background = t === 'pen' ? 'var(--primary)' : '#ccc';
-            document.getElementById('eraser-btn').style.background = t === 'eraser' ? 'var(--primary)' : '#ccc';
-        }
-
-        function updateColor() { color = document.getElementById('colorPicker').value; setTool('pen'); }
-
-        function startDraw(e) {
-            drawing = true;
-            ctx.beginPath();
-            const rect = canvas.getBoundingClientRect();
-            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-        }
-
-        function draw(e) {
-            if (!drawing) return;
-            const rect = canvas.getBoundingClientRect();
-            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-            ctx.strokeStyle = tool === 'eraser' ? 'white' : color;
-            ctx.lineWidth = document.getElementById('sizePicker').value;
-            ctx.lineCap = 'round';
-            ctx.stroke();
-        }
-
-        function stopDraw() { drawing = false; }
-
-        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
-
-        // --- Duel Mode ---
-        function toggleMode() {
-            isDuelMode = !isDuelMode;
-            const sidebar = document.getElementById('sidebar');
-            const divider = document.getElementById('divider');
-            const toggleBtn = document.getElementById('mode-toggle');
-            const duelControls = document.getElementById('duel-controls');
-            const scores = [document.getElementById('score-left'), document.getElementById('score-right')];
-
-            if (isDuelMode) {
-                sidebar.classList.add('hidden');
-                divider.style.display = 'block';
-                toggleBtn.innerText = "Duel Mode";
-                toggleBtn.classList.add('active');
-                duelControls.style.display = 'flex';
-                scores.forEach(s => s.style.display = 'block');
-                resetDuelScores();
-            } else {
-                sidebar.classList.remove('hidden');
-                divider.style.display = 'none';
-                toggleBtn.innerText = "Normal Mode";
-                toggleBtn.classList.remove('active');
-                duelControls.style.display = 'none';
-                scores.forEach(s => s.style.display = 'none');
-            }
-            setTimeout(resizeCanvas, 310);
-        }
-
-        function changeDuelScore(side, val) {
-            duelScores[side] += val;
-            if (duelScores[side] < 0) duelScores[side] = 0;
-            document.getElementById(`score-${side}`).innerText = duelScores[side];
-        }
-
-        function resetDuelScores() {
-            duelScores = { left: 0, right: 0 };
-            document.getElementById('score-left').innerText = '0';
-            document.getElementById('score-right').innerText = '0';
-        }
-
-        // --- Timer ---
-        function adjustTimer(sec) {
-            timeLeft += sec;
-            updateTimerDisplay();
-        }
-
-        function updateTimerDisplay() {
-            const m = Math.floor(timeLeft / 60);
-            const s = timeLeft % 60;
-            document.getElementById('timer').innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-        }
-
-        function toggleTimer() {
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-                document.getElementById('timer-btn').innerText = "Start";
-            } else {
-                if (timeLeft <= 0) return;
-                document.getElementById('timer-btn').innerText = "Pause";
-                timerInterval = setInterval(() => {
-                    timeLeft--;
-                    updateTimerDisplay();
-                    if (timeLeft <= 0) {
-                        clearInterval(timerInterval);
-                        timerInterval = null;
-                        document.getElementById('timer-btn').innerText = "Start";
-                        alert("Time is up!");
-                    }
-                }, 1000);
-            }
-        }
-
-        function resetTimer() {
+    // --- Timer Logic ---
+    function adjustTimer(s) { timeLeft += s; updateTimerDisplay(); }
+    function resetTimer() { timeLeft = 0; clearInterval(timerInterval); timerInterval = null; updateTimerDisplay(); }
+    
+    function toggleTimer() {
+        if (timerInterval) {
             clearInterval(timerInterval);
             timerInterval = null;
-            timeLeft = 0;
-            updateTimerDisplay();
-            document.getElementById('timer-btn').innerText = "Start";
+            document.getElementById('start-btn').innerText = "START";
+        } else {
+            if (timeLeft <= 0) return;
+            document.getElementById('start-btn').innerText = "PAUSE";
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    document.getElementById('start-btn').innerText = "START";
+                    alert("TIME'S UP!");
+                    new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YTtvT19v').play(); // Simple beep
+                }
+            }, 1000);
         }
-    </script>
+    }
+
+    function updateTimerDisplay() {
+        const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+        const s = (timeLeft % 60).toString().padStart(2, '0');
+        document.getElementById('timer-text').innerText = `${m}:${s}`;
+    }
+
+    // --- Canvas & Duel Logic ---
+    function toggleMode() {
+        isDuel = !isDuel;
+        document.getElementById('mode-btn').innerText = isDuel ? "DUEL MODE" : "SINGLE MODE";
+        document.getElementById('divider').style.display = isDuel ? 'block' : 'none';
+        document.getElementById('clear-r').style.display = isDuel ? 'block' : 'none';
+        document.getElementById('score-r').style.display = isDuel ? 'block' : 'none';
+        clearCanvas('all');
+    }
+
+    function resizeCanvas() {
+        const container = document.getElementById('canvas-container');
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+    }
+
+    function clearCanvas(side) {
+        if (side === 'left' && isDuel) {
+            ctx.clearRect(0, 0, canvas.width/2, canvas.height);
+        } else if (side === 'right' && isDuel) {
+            ctx.clearRect(canvas.width/2, 0, canvas.width/2, canvas.height);
+        } else {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+
+    function setupDrawing() {
+        let drawing = false;
+        const getPos = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        };
+
+        const start = (e) => { drawing = true; draw(e); };
+        const end = () => { drawing = false; ctx.beginPath(); };
+        const draw = (e) => {
+            if (!drawing) return;
+            const pos = getPos(e);
+            ctx.lineWidth = document.getElementById('pen-width').value;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = document.getElementById('pen-color').value;
+
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        };
+
+        canvas.addEventListener('mousedown', start);
+        canvas.addEventListener('mousemove', draw);
+        window.addEventListener('mouseup', end);
+
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); start(e); });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
+        canvas.addEventListener('touchend', end);
+    }
+
+    function useEraser() {
+        document.getElementById('pen-color').value = "#ffffff";
+    }
+
+    init();
+</script>
+
 </body>
 </html>
